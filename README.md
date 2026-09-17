@@ -20,6 +20,21 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Task storage
+
+Tasks are stored in [`public/storage/TASK.md`](./public/storage/TASK.md), one record
+per line using this format:
+
+```text
+project_name:priority:(subtask:::subtask:::subtask):duedate:status
+```
+
+`status` must be `todo`, `doing`, or `done`. Empty lines and Markdown comments are
+ignored, so the file can retain a format header. Use the typed parser and serializer
+from [`utils/index.ts`](./utils/index.ts) instead of splitting records in components.
+Server-side file reads and writes are available from
+[`utils/task-storage.ts`](./utils/task-storage.ts).
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
