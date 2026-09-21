@@ -1,8 +1,8 @@
 import axios from "axios";
 import { Task } from "@/types/task";
 
-const API_BASE_URL = "http://localhost:5000";
-
+const API_BASE_URL = process.env.PUBLIC_API_URL;
+console.log(API_BASE_URL)
 /**
  * Fetch all tasks from the Flask backend.
  */
@@ -108,6 +108,15 @@ export async function removeSubtask(taskId: number, subtaskId: number) {
         return response.data;
     } catch (error) {
         console.error(`Failed to delete subtask ID ${subtaskId}:`, error);
+        throw error;
+    }
+}
+
+export async function checkStatus() {
+    try {
+        const response = await axios.get(`${API_BASE_URL}/status`)
+        return response.data;
+    } catch (error) {
         throw error;
     }
 }

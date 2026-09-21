@@ -1,8 +1,8 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Board from "@/components/Board";
 import AddTaskForm from "@/components/AddTaskForm";
-import { createNewTask } from "@/services/taskServices"; // Adjust path if your service file is located elsewhere
+import { createNewTask, checkStatus } from "@/services/taskServices"; // Adjust path if your service file is located elsewhere
 import { FiPlus, FiSun, FiMoon } from "react-icons/fi";
 
 export default function Home() {
@@ -24,6 +24,19 @@ export default function Home() {
       console.error("Failed to create task:", error);
     }
   };
+
+  useEffect(() => {
+      const status = async () => {
+          try {
+              const data = await checkStatus();
+              console.log(data)
+          } catch (error) {
+              console.error("Failed to fetch tasks:", error);
+          }
+      };
+
+      status();
+  }, []);
 
   return (
     <div className={`min-h-screen font-poppins transition-colors duration-300 ${
