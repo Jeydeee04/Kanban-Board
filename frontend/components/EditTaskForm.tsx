@@ -42,7 +42,7 @@ export default function EditTaskForm({ task, isDarkMode, onSubmit, onClose }: Ed
     return (
         <form onSubmit={handleSubmit} className={`${cardBg} rounded-3xl border p-6 shadow-xl flex flex-col gap-5 w-full max-w-md mx-auto transition-colors duration-300`}>
             <div className="flex items-center justify-between">
-                <h2 className="text-base font-semibold">Edit Task #{task.task_id}</h2>
+                <h2 className="text-base font-semibold">Edit Task</h2>
                 <button type="button" onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 rounded-xl transition-colors cursor-pointer" aria-label="Close form">
                     <FiX className="w-4 h-4" />
                 </button>

@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { DoingCardProps } from "@/types/task"
-import { FiCalendar, FiFlag, FiSquare, FiCheckSquare, FiEdit2, FiTrash2, FiPlus } from "react-icons/fi"
+import { FiCalendar, FiFlag, FiSquare, FiCheckSquare, FiEdit2, FiTrash2, FiPlus, FiChevronDown, FiChevronUp } from "react-icons/fi"
 
 interface ExtendedDoingCardProps extends DoingCardProps {
     isDarkMode?: boolean;
@@ -14,6 +15,8 @@ interface ExtendedDoingCardProps extends DoingCardProps {
 }
 
 export default function DoingCard({ proj_name, prio, due_date, subtasks, isDarkMode, onDelete, onMove, onEdit, onAddSubtask, subtaskInput, onSubtaskInputChange, onDeleteSubtask, onToggleSubtask }: ExtendedDoingCardProps){
+    const [isSubtasksExpanded, setIsSubtasksExpanded] = useState(false);
+
     const getPriorityColor = (priority: string) => {
         switch (priority?.toLowerCase()) {
             case 'high': 
@@ -44,6 +47,9 @@ export default function DoingCard({ proj_name, prio, due_date, subtasks, isDarkM
         
     const addBtnStyling = isDarkMode ? "bg-slate-800 hover:bg-slate-700 text-slate-300" : "bg-slate-100 hover:bg-slate-200 text-slate-600";
     const actionBtnHover = isDarkMode ? "hover:bg-slate-800" : "hover:bg-slate-50";
+
+    const completedCount = subtasks?.filter(s => s.status === 'done').length || 0;
+    const totalSubtasks = subtasks?.length || 0;
 
     return(
         <div className={`${cardBg} rounded-3xl border p-6 shadow-sm hover:shadow-md transition-all flex flex-col gap-5 w-full shrink-0`}>
@@ -87,64 +93,79 @@ export default function DoingCard({ proj_name, prio, due_date, subtasks, isDarkM
                 </div>
             </div>
 
+            {/* Expandable Subtasks Section */}
             <div className="flex flex-col gap-3">
-                <h3 className={labelColor}>Subtasks</h3>
-                
-                {subtasks && subtasks.length > 0 ? (
-                    subtasks.map((sub) => {
-                        const isDone = sub.status === 'done';
-                        return (
-                            <div 
-                                key={sub.id} 
-                                onClick={() => onToggleSubtask?.(sub.id)}
-                                className={`flex items-center justify-between gap-3 text-xs ${subtaskCardBg} border px-3.5 py-3 rounded-xl shadow-2xs cursor-pointer transition-all`}
-                            >
-                                <div className="flex items-center gap-3 overflow-hidden">
-                                    {isDone ? (
-                                        <FiCheckSquare className="w-4 h-4 text-indigo-500 shrink-0" />
-                                    ) : (
-                                        <FiSquare className={`w-4 h-4 ${subtaskIconColor} shrink-0`} />
-                                    )}
-                                    <span className={`truncate font-medium ${isDone ? 'line-through text-slate-400' : ''}`}>
-                                        {sub.task}
-                                    </span>
-                                </div>
-                                <button 
-                                    onClick={(e) => {
-                                        e.stopPropagation(); // Prevents triggering checklist toggle when deleting
-                                        onDeleteSubtask?.(sub.id);
-                                    }}
-                                    className={`p-1.5 text-slate-400 hover:text-red-600 ${isDarkMode ? 'hover:bg-slate-700/50' : 'hover:bg-slate-50'} rounded-lg transition-colors cursor-pointer shrink-0`}
-                                    aria-label="Delete Subtask"
-                                >
-                                    <FiTrash2 className="w-3.5 h-3.5" />
-                                </button>
-                            </div>
-                        );
-                    })
-                ) : (
-                    <p className={`text-xs italic ${subtaskEmptyBg} border border-dashed px-4 py-3 rounded-xl text-center`}>
-                        No subtasks yet
-                    </p>
-                )}
-
-                <div className="flex items-center gap-2 mt-1">
-                    <input 
-                        type="text" 
-                        placeholder="Add a subtask..." 
-                        value={subtaskInput || ""}
-                        onChange={(e) => onSubtaskInputChange?.(e.target.value)}
-                        onKeyDown={(e) => { if (e.key === 'Enter') onAddSubtask?.(); }}
-                        className={`w-full text-xs border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 ${inputStyling}`}
-                    />
-                    <button 
-                        onClick={onAddSubtask} 
-                        className={`${addBtnStyling} p-3 rounded-xl transition-colors flex items-center justify-center shrink-0 cursor-pointer`} 
-                        aria-label="Add Subtask"
-                    >
-                        <FiPlus className="w-4 h-4" />
+                <div 
+                    onClick={() => setIsSubtasksExpanded(!isSubtasksExpanded)}
+                    className="flex items-center justify-between cursor-pointer select-none group"
+                >
+                    <div className="flex items-center gap-2">
+                        <h3 className={labelColor}>Subtasks ({completedCount}/{totalSubtasks})</h3>
+                    </div>
+                    <button className="text-slate-400 group-hover:text-slate-200 transition-colors p-1">
+                        {isSubtasksExpanded ? <FiChevronUp className="w-4 h-4" /> : <FiChevronDown className="w-4 h-4" />}
                     </button>
                 </div>
+                
+                {isSubtasksExpanded && (
+                    <div className="flex flex-col gap-3 animate-fadeIn">
+                        {subtasks && subtasks.length > 0 ? (
+                            subtasks.map((sub) => {
+                                const isDone = sub.status === 'done';
+                                return (
+                                    <div 
+                                        key={sub.id} 
+                                        onClick={() => onToggleSubtask?.(sub.id)}
+                                        className={`flex items-center justify-between gap-3 text-xs ${subtaskCardBg} border px-3.5 py-3 rounded-xl shadow-2xs cursor-pointer transition-all`}
+                                    >
+                                        <div className="flex items-center gap-3 overflow-hidden">
+                                            {isDone ? (
+                                                <FiCheckSquare className="w-4 h-4 text-indigo-500 shrink-0" />
+                                            ) : (
+                                                <FiSquare className={`w-4 h-4 ${subtaskIconColor} shrink-0`} />
+                                            )}
+                                            <span className={`truncate font-medium ${isDone ? 'line-through text-slate-400' : ''}`}>
+                                                {sub.task}
+                                            </span>
+                                        </div>
+                                        <button 
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onDeleteSubtask?.(sub.id);
+                                            }}
+                                            className={`p-1.5 text-slate-400 hover:text-red-600 ${isDarkMode ? 'hover:bg-slate-700/50' : 'hover:bg-slate-50'} rounded-lg transition-colors cursor-pointer shrink-0`}
+                                            aria-label="Delete Subtask"
+                                        >
+                                            <FiTrash2 className="w-3.5 h-3.5" />
+                                        </button>
+                                    </div>
+                                );
+                            })
+                        ) : (
+                            <p className={`text-xs italic ${subtaskEmptyBg} border border-dashed px-4 py-3 rounded-xl text-center`}>
+                                No subtasks yet
+                            </p>
+                        )}
+
+                        <div className="flex items-center gap-2 mt-1">
+                            <input 
+                                type="text" 
+                                placeholder="Add a subtask..." 
+                                value={subtaskInput || ""}
+                                onChange={(e) => onSubtaskInputChange?.(e.target.value)}
+                                onKeyDown={(e) => { if (e.key === 'Enter') onAddSubtask?.(); }}
+                                className={`w-full text-xs border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 ${inputStyling}`}
+                            />
+                            <button 
+                                onClick={onAddSubtask} 
+                                className={`${addBtnStyling} p-3 rounded-xl transition-colors flex items-center justify-center shrink-0 cursor-pointer`} 
+                                aria-label="Add Subtask"
+                            >
+                                <FiPlus className="w-4 h-4" />
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
 
             <button 

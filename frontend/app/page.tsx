@@ -2,7 +2,8 @@
 import { useState, useEffect } from "react";
 import Board from "@/components/Board";
 import AddTaskForm from "@/components/AddTaskForm";
-import { createNewTask, checkStatus } from "@/services/taskServices"; // Adjust path if your service file is located elsewhere
+import { createNewTask } from "@/services/createNewTask";
+import { checkStatus } from "@/services/checkStatus";
 import { FiPlus, FiSun, FiMoon } from "react-icons/fi";
 
 export default function Home() {
@@ -25,6 +26,11 @@ export default function Home() {
     }
   };
 
+  const toggleDarkMode = (isDarkMode : boolean) => {
+    localStorage.setItem("isDarkMode", String(isDarkMode));
+    setIsDarkMode(isDarkMode);
+  }
+
   useEffect(() => {
       const status = async () => {
           try {
@@ -34,6 +40,13 @@ export default function Home() {
               console.error("Failed to fetch tasks:", error);
           }
       };
+
+      if(localStorage.getItem("isDarkMode") === null){
+        localStorage.setItem("isDarkMode", "true");
+      }
+
+      const str = localStorage.getItem("isDarkMode");
+      setIsDarkMode(str === "true");
 
       status();
   }, []);
@@ -59,7 +72,7 @@ export default function Home() {
           </div>
           <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
             <button 
-              onClick={() => setIsDarkMode(!isDarkMode)}
+              onClick={() => toggleDarkMode(!isDarkMode)}
               className={`p-3 rounded-2xl transition-all shadow-2xs flex items-center justify-center cursor-pointer ${
                 isDarkMode ? "bg-slate-800 hover:bg-slate-700 text-slate-300" : "bg-slate-100 hover:bg-slate-200 text-slate-600"
               }`}

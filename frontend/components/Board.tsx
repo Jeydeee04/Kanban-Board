@@ -1,7 +1,14 @@
 "use client";
 import { useState, useEffect } from "react";
 import { Task } from "@/types/task";
-import * as taskServices from "@/services/taskServices";
+import { updateTask } from "@/services/updateTask";
+import { getTasks } from "@/services/getTasks";
+import { removeTask } from "@/services/removeTask";
+import { createNewSubtask } from "@/services/createNewSubtask";
+import { updateSubtask } from "@/services/updateSubtask";
+import { removeSubtask } from "@/services/removeSubtask";
+import { getFormattedDateParts } from "@/utils/getFormattedDateParts";
+import { getCascadedOptions } from "@/utils/getCascadedOptions";
 import ToDoCard from "@/components/ToDoCard";
 import DoingCard from "@/components/DoingCard";
 import DoneCard from "@/components/DoneCard";
@@ -55,7 +62,7 @@ export default function Board({ isDarkMode }: BoardProps) {
     useEffect(() => {
         const fetchTasks = async () => {
             try {
-                const data = await taskServices.getTasks();
+                const data = await getTasks();
                 setTasks(Array.isArray(data) ? data : []);
             } catch (error) {
                 console.error("Failed to fetch tasks:", error);
@@ -66,71 +73,6 @@ export default function Board({ isDarkMode }: BoardProps) {
         fetchTasks();
     }, []);
 
-    // Format date string to Month ("September 2026") and Day ("12")
-    const getFormattedDateParts = (dateStr: string) => {
-        if (!dateStr) return { month: "", day: "" };
-        const d = new Date(dateStr);
-        if (isNaN(d.getTime())) {
-            const parts = dateStr.split(/[-/]/);
-            if (parts.length >= 3) {
-                const year = parts[0];
-                const mIndex = parseInt(parts[1], 10) - 1;
-                const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-                const monthName = monthNames[mIndex] || parts[1];
-                return { month: `${monthName} ${year}`, day: parseInt(parts[2], 10).toString() };
-            }
-            return { month: "", day: "" };
-        }
-        const monthName = d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-        const dayNum = d.getDate().toString();
-        return { month: monthName, day: dayNum };
-    };
-
-    // Cascading Filter Logic: Shows all options if ALL filters are set to "all". Otherwise, cascades dynamically.
-    const getCascadedOptions = (statusTasks: Task[], currentPriority: string, currentMonth: string, currentDay: string) => {
-        const allPriorities = Array.from(new Set(statusTasks.map(t => t.prio).filter(Boolean)));
-        const allMonths = Array.from(new Set(statusTasks.map(t => getFormattedDateParts(t.due_date).month).filter(Boolean)));
-        const allDays = Array.from(new Set(statusTasks.map(t => getFormattedDateParts(t.due_date).day).filter(Boolean)))
-            .sort((a, b) => parseInt(a) - parseInt(b));
-
-        // If NO filters are selected at all, show everything
-        if (currentPriority === "all" && currentMonth === "all" && currentDay === "all") {
-            return {
-                availablePriorities: allPriorities,
-                availableMonths: allMonths,
-                availableDays: allDays
-            };
-        }
-
-        // Otherwise, calculate independent restrictions based on active filters
-        const tasksForPriorities = statusTasks.filter(t => {
-            const { month, day } = getFormattedDateParts(t.due_date);
-            const matchMonth = currentMonth === "all" || month === currentMonth;
-            const matchDay = currentDay === "all" || day === currentDay;
-            return matchMonth && matchDay;
-        });
-        const availablePriorities = Array.from(new Set(tasksForPriorities.map(t => t.prio).filter(Boolean)));
-
-        const tasksForMonths = statusTasks.filter(t => {
-            const { day } = getFormattedDateParts(t.due_date);
-            const matchPriority = currentPriority === "all" || t.prio?.toLowerCase() === currentPriority.toLowerCase();
-            const matchDay = currentDay === "all" || day === currentDay;
-            return matchPriority && matchDay;
-        });
-        const availableMonths = Array.from(new Set(tasksForMonths.map(t => getFormattedDateParts(t.due_date).month).filter(Boolean)));
-
-        const tasksForDays = statusTasks.filter(t => {
-            const { month } = getFormattedDateParts(t.due_date);
-            const matchPriority = currentPriority === "all" || t.prio?.toLowerCase() === currentPriority.toLowerCase();
-            const matchMonth = currentMonth === "all" || month === currentMonth;
-            return matchPriority && matchMonth;
-        });
-        const availableDays = Array.from(new Set(tasksForDays.map(t => getFormattedDateParts(t.due_date).day).filter(Boolean)))
-            .sort((a, b) => parseInt(a) - parseInt(b));
-
-        return { availablePriorities, availableMonths, availableDays };
-    };
-
     const moveTaskStatus = async (taskId: number, currentStatus: Task["status"]) => {
         let nextStatus: Task["status"] = "doing";
         if (currentStatus === "todo") nextStatus = "doing";
@@ -138,7 +80,7 @@ export default function Board({ isDarkMode }: BoardProps) {
         else if (currentStatus === "done") nextStatus = "todo";
 
         try {
-            await taskServices.updateTask(taskId, { status: nextStatus });
+            await updateTask(taskId, { status: nextStatus });
             setTasks(prev => (prev || []).map(task => 
                 task.task_id === taskId ? { ...task, status: nextStatus } : task
             ));
@@ -149,7 +91,7 @@ export default function Board({ isDarkMode }: BoardProps) {
 
     const deleteTask = async (taskId: number) => {
         try {
-            await taskServices.removeTask(taskId);
+            await removeTask(taskId);
             setTasks(prev => (prev || []).filter(task => task.task_id !== taskId));
             resetAllFilters(); // Reset filters to default on delete
         } catch (error) {
@@ -160,7 +102,7 @@ export default function Board({ isDarkMode }: BoardProps) {
     const handleEditTaskSubmit = async (updatedData: { proj_name?: string; prio?: string; due_date?: string }) => {
         if (!editingTask) return;
         try {
-            await taskServices.updateTask(editingTask.task_id, updatedData);
+            await updateTask(editingTask.task_id, updatedData);
             setTasks(prev => (prev || []).map(task => 
                 task.task_id === editingTask.task_id ? { ...task, ...updatedData } : task
             ));
@@ -176,8 +118,8 @@ export default function Board({ isDarkMode }: BoardProps) {
         if (!text || text.trim() === "") return;
 
         try {
-            await taskServices.addSubtask(taskId, text.trim());
-            const data = await taskServices.getTasks();
+            await createNewSubtask(taskId, text.trim());
+            const data = await getTasks();
             setTasks(Array.isArray(data) ? data : []);
             setNewSubtaskInputs(prev => ({ ...prev, [taskId]: "" }));
         } catch (error) {
@@ -187,7 +129,7 @@ export default function Board({ isDarkMode }: BoardProps) {
 
     const deleteSubtask = async (taskId: number, subId: number) => {
         try {
-            await taskServices.removeSubtask(taskId, subId);
+            await removeSubtask(taskId, subId);
             setTasks(prev => (prev || []).map(task => {
                 if (task.task_id === taskId) {
                     return {
@@ -211,7 +153,7 @@ export default function Board({ isDarkMode }: BoardProps) {
             if (!subtask) return;
 
             const nextStatus = subtask.status === 'done' ? 'pending' : 'done';
-            await taskServices.updateSubtask?.(taskId, subId, {task: subtask.task, status: nextStatus});
+            await updateSubtask?.(taskId, subId, {task: subtask.task, status: nextStatus});
 
             setTasks(prev => (prev || []).map(t => {
                 if (t.task_id === taskId) {
@@ -304,7 +246,7 @@ export default function Board({ isDarkMode }: BoardProps) {
                         onChange={(e) => { setMonth(e.target.value); setPage(1); }}
                         className={`text-xs border rounded-xl px-2 py-2 focus:outline-none focus:ring-2 ${inputStyle}`}
                     >
-                        <option value="all">All</option>
+                        <option value="all">Month</option>
                         {availableMonths.map(m => (
                             <option key={m} value={m}>{m}</option>
                         ))}
@@ -315,7 +257,7 @@ export default function Board({ isDarkMode }: BoardProps) {
                         onChange={(e) => { setDay(e.target.value); setPage(1); }}
                         className={`text-xs border rounded-xl px-2 py-2 focus:outline-none focus:ring-2 ${inputStyle}`}
                     >
-                        <option value="all">All</option>
+                        <option value="all">Day</option>
                         {availableDays.map(d => (
                             <option key={d} value={d}>{d}</option>
                         ))}

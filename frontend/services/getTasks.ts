@@ -1,7 +1,7 @@
 import axios from "axios";
 import { Task } from "@/types/task";
 
-const API_BASE_URL = "http://localhost:5000";
+const API_BASE_URL = process.env.PUBLIC_API_URL;
 
 /**
  * Fetch all tasks from the Flask backend.
