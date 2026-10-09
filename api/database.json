@@ -1,0 +1,15 @@
+[
+    {
+        "task_id": 1,
+        "proj_name": "Kanban Board",
+        "prio": "Low",
+        "due_date": "",
+        "subtasks": [
+            {
+                "task_id": 1,
+                "task_text": "Hello"
+            }
+        ],
+        "status": "todo"
+    }
+]
