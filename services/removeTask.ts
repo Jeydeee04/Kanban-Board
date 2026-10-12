@@ -1,7 +1,7 @@
 import axios from "axios";
 import { Task } from "@/types/task";
 
-const API_BASE_URL = process.env.PUBLIC_API_URL;
+const API_BASE_URL = process.env.NEXT_API_URL;
 
 export async function removeTask(taskId: string) {
     try {
